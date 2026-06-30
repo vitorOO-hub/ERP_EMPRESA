@@ -1,46 +1,106 @@
 from fastapi import APIRouter, HTTPException, Depends
 from models import Usuarios
 from dependencies import session
-from main import bcrypt_context
+from main import SECRET_KEY, bcrypt_context, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from schemas import LoginSchema, UsuarioSchema
+from sqlalchemy.orm import Session
+from jose import jwt, JWTError
+from datetime import datetime, timedelta, timezone
 
 user_router = APIRouter(prefix = '/user', tags = ['users'])
 
+def criar_token(user_id, duracao_token: timedelta = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)):
+
+    data_expiracao = datetime.now(timezone.utc) + duracao_token
+    dici_info = {'sub': user_id, 'exp': data_expiracao}
+    jwt_codificado = jwt.encode(dici_info, SECRET_KEY, algorithm=ALGORITHM)
+
+    return jwt_codificado
+
+def autenticar_usuario(email: str, senha: str, session: Session):
+    usuario = session.query(Usuarios).filter(Usuarios.email == email).first()
+    
+    if not usuario:
+        return False
+    
+    if not bcrypt_context.verify(senha, usuario.senha):
+        return False
+    
+    return usuario
+
+def verificar_token(token: str, session: Session = Depends(session)):
+    
+    usuario = session.query(Usuarios).filter(Usuarios.id == 1).first()
+    return usuario
+
 @user_router.get('/todos_usuarios')
-async def todos_usuarios(session = Depends(session)):
+async def todos_usuarios(session: Session = Depends(session)):
     todos_usuarios = session.query(Usuarios).all()
     return{'usuarios': todos_usuarios}
 
 @user_router.get('/usuario/{id}')
-async def usuario(id: int, session = Depends(session)):
+async def usuario(id: int, session: Session = Depends(session)):
     usuario_especifico = session.query(Usuarios).filter(Usuarios.id == id).first()
     return {'usuario': usuario_especifico}
 
 @user_router.post('/criar_conta')
-async def criar_conta(nome:str, email: str, senha: str, session = Depends(session)):
-    usuario = session.query(Usuarios).filter(Usuarios.email == email, Usuarios.senha == senha).first()
+async def criar_conta(usuario_schema: UsuarioSchema, session: Session = Depends(session)):
+    usu = session.query(Usuarios).filter(Usuarios.email == usuario_schema.email, Usuarios.senha == usuario_schema.senha).first()
     
-    if usuario:
+    if usu:
         return {'message': 'Usuário já existe'}
     else:
-        senha_criptografada = bcrypt_context.hash(senha)
-        novo_usuario = Usuarios(nome=nome, email=email, senha=senha_criptografada)
+        senha_criptografada = bcrypt_context.hash(usuario_schema.senha)
+        novo_usuario = Usuarios(nome=usuario_schema.nome, email=usuario_schema.email, senha=senha_criptografada, 
+                                is_active=usuario_schema.is_active, cargo=usuario_schema.cargo)
         session.add(novo_usuario)
         session.commit()
         return {'message': 'Usuário criado com sucesso', 'user': novo_usuario}
 
+# Token JWT
+@user_router.post('/login')
+async def login(login_schema: LoginSchema, session: Session = Depends(session)):
+    usuario = autenticar_usuario(login_schema.email, login_schema.senha, session)
+
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Usuario não encontrado ou Credenciais inválidas")
+    else:
+        access_token = criar_token(usuario.id)
+        refresh_token = criar_token(usuario.id, timedelta(days=7))  # Token de atualização válido por 7 dias
+
+        return {'access_token': access_token, 
+                'refresh_token': refresh_token,
+                'token_type': 'Bearer'}
+
+#Gerar novo refresh token
+@user_router.get('/refresh_token')
+async def refresh_token(refresh_token: str, session: Session = Depends(session)):
+    usuario = verificar_token(refresh_token, session)
+    access_token = criar_token(usuario.id)
+
+    return {'access_token': access_token, 
+                'refresh_token': refresh_token,
+                'token_type': 'Bearer'}
+
+
+
 @user_router.put('/atualizar_usuario/{id}')
-async def atualizar_usuario(id: int, nome: str = None, email: str = None, senha: str = None, session = Depends(session)):
+async def atualizar_usuario(id: int, usuario_schema: UsuarioSchema, session: Session = Depends(session)):
     usuario = session.query(Usuarios).filter(Usuarios.id == id).first()
     
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
-    if nome is not None:
-        usuario.nome = nome
-    if email is not None:
-        usuario.email = email
-    if senha is not None:
-        usuario.senha = bcrypt_context.hash(senha)
+    if usuario_schema.nome is not None:
+        usuario.nome = usuario_schema.nome
+    if usuario_schema.email is not None:
+        usuario.email = usuario_schema.email
+    if usuario_schema.senha is not None:
+        usuario.senha = bcrypt_context.hash(usuario_schema.senha)
+    if usuario_schema.is_active is not None:
+        usuario.is_active = usuario_schema.is_active
+    if usuario_schema.cargo is not None:
+        usuario.cargo = usuario_schema.cargo
 
     session.commit()
     
