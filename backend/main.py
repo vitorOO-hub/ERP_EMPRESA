@@ -1,9 +1,19 @@
 from fastapi import FastAPI
+from passlib.context import CryptContext
+from dotenv import load_dotenv
+from database import engine
+
 import models
-from database import engine, SessionLocal
-from sqlalchemy.orm import Session
+import os
+
+#Carrega variáveis de ambiente do arquivo .env
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 app = FastAPI()
+
+bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 #Cria tabelas no postgresql
 models.Base.metadata.create_all(bind=engine)
