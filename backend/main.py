@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 from database import engine
@@ -16,6 +17,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 app = FastAPI()
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+#Manda para o header a requisição do refresh token
+oauth2_schema = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 #Cria tabelas no postgresql
 models.Base.metadata.create_all(bind=engine)
