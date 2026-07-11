@@ -6,6 +6,7 @@ from schemas import LoginSchema, UsuarioSchema
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
+from fastapi.security import OAuth2PasswordRequestForm
 
 user_router = APIRouter(prefix = '/user', tags = ['users'])
 
@@ -36,11 +37,15 @@ async def todos_usuarios(session: Session = Depends(session)):
 @user_router.get('/usuario/{id}')
 async def usuario(id: int, session: Session = Depends(session)):
     usuario_especifico = session.query(Usuarios).filter(Usuarios.id == id).first()
+
+    if not usuario_especifico:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    
     return {'usuario': usuario_especifico}
 
 @user_router.post('/criar_conta')
 async def criar_conta(usuario_schema: UsuarioSchema, session: Session = Depends(session)):
-    usu = session.query(Usuarios).filter(Usuarios.email == usuario_schema.email, Usuarios.senha == usuario_schema.senha).first()
+    usu = session.query(Usuarios).filter(Usuarios.email == usuario_schema.email).first()
     
     if usu:
         return {'message': 'Usuário já existe'}
@@ -54,17 +59,33 @@ async def criar_conta(usuario_schema: UsuarioSchema, session: Session = Depends(
 
 # Token JWT
 @user_router.post('/login')
-async def login(login_schema: LoginSchema, session: Session = Depends(session)):
-    usuario = autenticar_usuario(login_schema.email, login_schema.senha, session)
+async def login(usuario: LoginSchema, session: Session = Depends(session)):
+    usuario = autenticar_usuario(usuario.email, usuario.senha, session)
 
     if not usuario:
         raise HTTPException(status_code=401, detail="Usuario não encontrado ou Credenciais inválidas")
     else:
+
+        if usuario.is_active == False:
+            raise HTTPException(status_code=403, detail="Usuário inativo, contate o administrador")
+        
         access_token = criar_token(usuario.id)
         refresh_token = criar_token(usuario.id, timedelta(days=7))  # Token de atualização válido por 7 dias
 
         return {'access_token': access_token, 
                 'refresh_token': refresh_token,
+                'token_type': 'Bearer'}
+
+#Formulario de login no oauth2
+@user_router.post('/login-form')
+async def login_form(dados_formulario: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(session)):
+    usuario = autenticar_usuario(dados_formulario.username, dados_formulario.password, session)
+    if not usuario:
+        raise HTTPException(status_code=401, detail="Usuario não encontrado ou Credenciais inválidas")
+    else:
+        access_token = criar_token(usuario.id)
+
+        return {'access_token': access_token, 
                 'token_type': 'Bearer'}
 
 #Gerar novo refresh token
@@ -73,10 +94,7 @@ async def refresh_token(usuario: Usuarios = Depends(verificar_token), session: S
     access_token = criar_token(usuario.id)
 
     return {'access_token': access_token, 
-                'refresh_token': refresh_token,
-                'token_type': 'Bearer'}
-
-
+            'token_type': 'Bearer'}
 
 @user_router.put('/atualizar_usuario/{id}')
 async def atualizar_usuario(id: int, usuario_schema: UsuarioSchema, session: Session = Depends(session)):
