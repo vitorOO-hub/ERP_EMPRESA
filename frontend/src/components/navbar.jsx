@@ -1,4 +1,10 @@
+import {useContext} from 'react'
+import { UsuariosContext } from '../../UsuariosContext.jsx'
+
 const NavBar = ({ onIndex, onOutra, onHome }) => {
+  const [user] = useContext(UsuariosContext)
+  const totalUsuarios = Array.isArray(user) ? user.length : 0
+  
   return (
     <header className="navbar">
       <button className="navbar-brand" type="button" onClick={onHome}>
@@ -6,7 +12,7 @@ const NavBar = ({ onIndex, onOutra, onHome }) => {
       </button>
 
       <nav className="navbar-actions" aria-label="Principal">
-        <span className="stock-badge">Products in stock</span>
+        <span className="stock-badge">Usuarios cadastrados {totalUsuarios}</span>
         <button className="nav-button" type="button" onClick={onIndex}>
           Mostrar usuários
         </button>
