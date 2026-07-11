@@ -4,10 +4,8 @@ import {UsuariosContext} from '../../UsuariosContext.jsx'
 export default function Home() {
     const [user] = useContext(UsuariosContext)
 
-
     return (
         <>
-            
         <div>
             <table>
                 <thead>
@@ -16,6 +14,7 @@ export default function Home() {
                         <th>Nome</th>
                         <th>Email</th>
                         <th>Cargo</th>
+                        <th>Ativo</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -24,15 +23,14 @@ export default function Home() {
                             <td>{usuario.id}</td>
                             <td>{usuario.nome}</td>
                             <td>{usuario.email}</td>
-                            <td>{usuario.cargo}</td>
+                            <td>{usuario.cargo?.value ?? usuario.cargo?.code ?? usuario.cargo}</td>
+                            <td>{usuario.is_active ? 'Sim' : 'Não'}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
         </div>
-
         </>
-        
     )
 }
 

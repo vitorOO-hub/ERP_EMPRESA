@@ -3,6 +3,7 @@ import { createContext, useEffect, useState } from 'react';
 export const UsuariosContext = createContext();
 
 export const UsuariosProvider = ({ children }) => {
+
     const [usuarios, setUsuarios] = useState([]);
 
     useEffect(() => {
