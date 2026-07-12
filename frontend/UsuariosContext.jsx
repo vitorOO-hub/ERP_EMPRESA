@@ -1,29 +1,48 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useState } from 'react'
 
-export const UsuariosContext = createContext();
+export const UsuariosContext = createContext()
 
 export const UsuariosProvider = ({ children }) => {
+  const [usuarios, setUsuarios] = useState([])
 
-    const [usuarios, setUsuarios] = useState([]);
+  const carregarUsuarios = useCallback(async () => {
+    const token = localStorage.getItem('access_token')
 
-    useEffect(() => {
-        async function carregarUsuarios() {
-            try {
-                const response = await fetch('http://127.0.0.1:8000/user/todos_usuarios');
-                const dados = await response.json();
-                setUsuarios(Array.isArray(dados.usuarios) ? dados.usuarios : []);
-            } catch (error) {
-                console.error('Erro ao carregar usuarios:', error);
-                setUsuarios([]);
-            }
+    if (!token) {
+      setUsuarios([])
+      return
+    }
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/user/todos_usuarios', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('access_token')
         }
+        setUsuarios([])
+        return
+      }
 
-        carregarUsuarios();
-    }, []);
+      const dados = await response.json()
+      setUsuarios(Array.isArray(dados.usuarios) ? dados.usuarios : [])
+    } catch (error) {
+      console.error('Erro ao carregar usuarios:', error)
+      setUsuarios([])
+    }
+  }, [])
 
-    return (
-        <UsuariosContext.Provider value={[usuarios, setUsuarios]}>
-            {children}
-        </UsuariosContext.Provider>
-    )
+  useEffect(() => {
+    carregarUsuarios()
+  }, [carregarUsuarios])
+
+  return (
+    <UsuariosContext.Provider value={{ usuarios, setUsuarios, carregarUsuarios }}>
+      {children}
+    </UsuariosContext.Provider>
+  )
 }

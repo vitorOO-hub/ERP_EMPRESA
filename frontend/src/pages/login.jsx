@@ -1,13 +1,17 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { UsuariosContext } from '../../UsuariosContext.jsx'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const navigate = useNavigate();
+  const [erro, setErro] = useState('')
+  const navigate = useNavigate()
+  const { carregarUsuarios } = useContext(UsuariosContext)
 
   async function fazerLogin(event) {
     event.preventDefault()
+    setErro('')
 
     const resposta = await fetch('http://127.0.0.1:8000/user/login', {
       method: 'POST',
@@ -16,10 +20,15 @@ export default function Login() {
     })
 
     const dados = await resposta.json()
-    
-    if (resposta.status === 200) {
-      navigate('/usuarios')  // Redireciona para a página inicial após o login bem-sucedido
+
+    if (!resposta.ok) {
+      setErro(dados.detail || 'Email ou senha incorretos')
+      return
     }
+
+    localStorage.setItem('access_token', dados.access_token)
+    await carregarUsuarios()
+    navigate('/usuarios')
   }
 
   return (
@@ -39,6 +48,8 @@ export default function Login() {
       />
 
       <button type="submit">Entrar</button>
+
+      {erro && <p>{erro}</p>}
     </form>
   )
 }

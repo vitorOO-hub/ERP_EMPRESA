@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { UsuariosContext } from '../../UsuariosContext.jsx'
 
 const NavBar = () => {
-  const [usuarios] = useContext(UsuariosContext)
+  const { usuarios } = useContext(UsuariosContext)
   const totalUsuarios = Array.isArray(usuarios) ? usuarios.length : 0
 
   return (
