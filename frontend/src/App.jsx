@@ -1,23 +1,20 @@
-import { useState } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import NavBar from './components/navbar.jsx'
 import Usuarios from './pages/usuarios.jsx'
-import OutraPagina from './pages/outra.jsx'
+import Login from './pages/login.jsx'
 import { UsuariosProvider } from '../UsuariosContext.jsx'
 import './App.css'
 
 function App() {
-  const [paginaAtual, setPaginaAtual] = useState('home')
-
   return (
     <UsuariosProvider>
-      <NavBar
-        onIndex={() => setPaginaAtual('index')}
-        onOutra={() => setPaginaAtual('outra')}
-        onHome={() => setPaginaAtual('home')}
-      />
+      <NavBar />
 
-      {paginaAtual === 'index' && <Usuarios />}
-      {paginaAtual === 'outra' && <OutraPagina />}
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/usuarios" element={<Usuarios />} />
+      </Routes>
     </UsuariosProvider>
   )
 }
