@@ -36,6 +36,7 @@ export const UsuariosProvider = ({ children }) => {
     }
   }, [])
 
+
   useEffect(() => {
     carregarUsuarios()
   }, [carregarUsuarios])
