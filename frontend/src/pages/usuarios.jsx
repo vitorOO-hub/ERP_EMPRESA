@@ -11,6 +11,7 @@ export default function Usuarios() {
     carregarUsuarios()
   }, [carregarUsuarios])
 
+  {/* Função para carregar os detalhes de um usuário específico */}
   const carregarUsuario = async (idUsuario) => {
     const token = localStorage.getItem('access_token')
 
