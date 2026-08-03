@@ -6,7 +6,8 @@ from jose import jwt
 from sqlalchemy.orm import Session
 
 from dependencies import session, verificar_token
-from main import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY, bcrypt_context
+from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
+from security import bcrypt_context
 from models import Usuarios
 from schemas import LoginSchema, UsuarioSchema
 

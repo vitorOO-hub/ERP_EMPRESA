@@ -3,7 +3,8 @@ from models import Usuarios
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 from jose import jwt, JWTError
-from main import SECRET_KEY, ALGORITHM, oauth2_schema
+from config import SECRET_KEY, ALGORITHM
+from security import oauth2_schema
 
 
 def session():

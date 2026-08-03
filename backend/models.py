@@ -1,5 +1,4 @@
-from sqlalchemy import Boolean, Integer, ForeignKey, Column, String
-from sqlalchemy_utils import ChoiceType
+from sqlalchemy import Boolean, Integer, Column, String
 from datetime import datetime, timezone
 from database import Base
 
@@ -14,7 +13,7 @@ class Usuarios(Base):
     nome = Column('nome', String)
     email = Column('email', String, nullable=False, unique=True)
     senha = Column('senha', String)
-    cargo = Column('cargo', ChoiceType(choices = cargos), default = 'Operador')
+    cargo = Column('cargo', String, default='Operador')
     is_active = Column('is_active', Boolean)
     created_at = Column('created_at', String, default=datetime.now(timezone.utc))
 
