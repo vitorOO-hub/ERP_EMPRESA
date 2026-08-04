@@ -9,7 +9,7 @@ from dependencies import session, verificar_token
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from security import bcrypt_context
 from models import Usuarios
-from schemas import LoginSchema, UsuarioSchema
+from schemas import LoginSchema, UsuarioSchema, UsuarioUpdateSchema
 
 
 user_router = APIRouter(prefix="/user", tags=["users"])
@@ -144,7 +144,7 @@ async def refresh_token(usuario: Usuarios = Depends(verificar_token)):
 @user_router.put("/atualizar_usuario/{id}")
 async def atualizar_usuario(
     id: int,
-    usuario_schema: UsuarioSchema,
+    usuario_schema: UsuarioUpdateSchema,
     usuario_logado: Usuarios = Depends(verificar_token),
     session: Session = Depends(session),
 ):
@@ -157,7 +157,7 @@ async def atualizar_usuario(
         usuario.nome = usuario_schema.nome
     if usuario_schema.email is not None:
         usuario.email = usuario_schema.email
-    if usuario_schema.senha is not None:
+    if usuario_schema.senha:
         usuario.senha = bcrypt_context.hash(usuario_schema.senha)
     if usuario_schema.is_active is not None:
         usuario.is_active = usuario_schema.is_active
@@ -165,5 +165,6 @@ async def atualizar_usuario(
         usuario.cargo = usuario_schema.cargo
 
     session.commit()
+    session.refresh(usuario)
 
     return {"message": "Usuario atualizado com sucesso", "user": usuario_publico(usuario)}

@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
 
 class UsuarioSchema(BaseModel):
     nome: str
@@ -7,6 +8,17 @@ class UsuarioSchema(BaseModel):
     senha: str
     is_active: Optional[bool]
     cargo: Optional[str] = "Operador"
+
+    class Config:
+        from_attributes = True
+
+
+class UsuarioUpdateSchema(BaseModel):
+    nome: Optional[str] = None
+    email: Optional[str] = None
+    senha: Optional[str] = None
+    is_active: Optional[bool] = None
+    cargo: Optional[str] = None
 
     class Config:
         from_attributes = True
